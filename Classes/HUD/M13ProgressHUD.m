@@ -201,7 +201,7 @@
     _progressView.animationDuration = _animationDuration;
 }
 
-- (void)setStatus:(NSString *)status
+- (void)setStatus:(NSString *)status animated:(BOOL)animated
 {
     _status = status;
     if (_status.length == 0 || _status == nil) {
@@ -210,7 +210,11 @@
     } else {
         [self recalculateOptimalStatusStringStructure];
     }
-    [self layoutHUD];
+    [self layoutHUD:NO];
+}
+- (void)setStatus:(NSString *)status
+{
+	[self setStatus:status animated:NO];
 }
 
 - (void)setMinimumSize:(CGSize)minimumSize
@@ -399,6 +403,11 @@
 
 - (void)layoutHUD
 {
+	[self layoutHUD:YES];
+}
+
+- (void)layoutHUD:(BOOL)animated
+{
     //Setup the background rect
     CGRect backgroundRect = CGRectZero;
     //Setup the label rect
@@ -529,24 +538,29 @@
         backgroundRect.size.height = temp;
     }
     
-    //Set the frame of the background and its subviews
-    [UIView animateWithDuration:_animationDuration animations:^{
-        backgroundView.frame = CGRectIntegral(backgroundRect);
-        _progressView.frame = CGRectIntegral(progressRect);
-         backgroundView.transform = CGAffineTransformMakeRotation([self angleForDeviceOrientation]);
-        //Fade the label
-        statusLabel.alpha = 0.0;
-    } completion:^(BOOL finished) {
-        if (finished) {
-            //Set the label frame
-            statusLabel.frame = CGRectIntegral(statusRect);
-            statusLabel.text = optimalStatusString;
-            [UIView animateWithDuration:_animationDuration animations:^{
-                //Show the label
-                statusLabel.alpha = 1.0;
-            }];
-        }
-    }];
+	if (animated) {
+		//Set the frame of the background and its subviews
+		[UIView animateWithDuration:_animationDuration animations:^{
+			backgroundView.frame = CGRectIntegral(backgroundRect);
+			_progressView.frame = CGRectIntegral(progressRect);
+			backgroundView.transform = CGAffineTransformMakeRotation([self angleForDeviceOrientation]);
+			//Fade the label
+			statusLabel.alpha = 0.0;
+		} completion:^(BOOL finished) {
+			if (finished) {
+				//Set the label frame
+				statusLabel.frame = CGRectIntegral(statusRect);
+				statusLabel.text = optimalStatusString;
+				[UIView animateWithDuration:_animationDuration animations:^{
+					//Show the label
+					statusLabel.alpha = 1.0;
+				}];
+			}
+		}];
+	} else {
+		statusLabel.frame = CGRectIntegral(statusRect);
+		statusLabel.text = optimalStatusString;
+	}
     
 }
 
