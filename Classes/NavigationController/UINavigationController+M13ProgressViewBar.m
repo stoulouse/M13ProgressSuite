@@ -20,25 +20,27 @@ static char isShowingProgressKey;
 static char primaryColorKey;
 static char secondaryColorKey;
 
-@implementation UINavigationController (M13ProgressViewBar)
+@implementation UIViewController (M13ProgressViewBar)
 
 #pragma mark Title
 
 - (void)setProgressTitle:(NSString *)title
 {
+	if ([self isKindOfClass:[UINavigationController class]]) {
     //Change the title on screen.
     NSString *oldTitle = [self getOldTitle];
     if (oldTitle == nil) {
         //We haven't changed the navigation bar yet. So store the original before changing it.
-        [self setOldTitle:self.visibleViewController.navigationItem.title];
+        [self setOldTitle:((UINavigationController*)self).visibleViewController.navigationItem.title];
     }
     
     if (title != nil) {
-        self.visibleViewController.navigationItem.title = title;
+        ((UINavigationController*)self).visibleViewController.navigationItem.title = title;
     } else {
-        self.visibleViewController.navigationItem.title = oldTitle;
+        ((UINavigationController*)self).visibleViewController.navigationItem.title = oldTitle;
         [self setOldTitle:nil];
     }
+	}
 }
 
 #pragma mark Progress
@@ -95,7 +97,10 @@ static char secondaryColorKey;
         dispatch_async(dispatch_get_main_queue(), ^{
             [UIView animateWithDuration:0.1 animations:^{
                 CGRect progressFrame = progressView.frame;
-                progressFrame.size.width = self.navigationBar.frame.size.width;
+				if ([self isKindOfClass:[UINavigationController class]])
+					progressFrame.size.width = ((UINavigationController*)self).navigationBar.frame.size.width;
+				else
+					progressFrame.size.width = self.view.frame.size.width;
                 progressView.frame = progressFrame;
             } completion:^(BOOL finished) {
                 [UIView animateWithDuration:0.5 animations:^{
@@ -154,7 +159,10 @@ static char secondaryColorKey;
     if(!progressView)
 	{
 		progressView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 0, 2.5)];
-		progressView.backgroundColor = self.navigationBar.tintColor;
+		if ([self isKindOfClass:[UINavigationController class]])
+			progressView.backgroundColor = ((UINavigationController*)self).navigationBar.tintColor;
+		else
+			progressView.backgroundColor = self.view.tintColor;
         if ([self getPrimaryColor]) {
             progressView.backgroundColor = [self getPrimaryColor];
         }
@@ -170,20 +178,29 @@ static char secondaryColorKey;
     if (UIInterfaceOrientationIsLandscape(interfaceOrientation)) {
         //Use the maximum value
         width = MAX(screenSize.width, screenSize.height);
-        if ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPhone) {
-            height = 32.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
-        } else {
-            height = 44.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
-        }
+		
+		if ([self isKindOfClass:[UINavigationController class]]) {
+			if ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPhone) {
+				height = 32.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
+			} else {
+				height = 44.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
+			}
+		}
     } else {
         //Use the minimum value
         width = MIN(screenSize.width, screenSize.height);
-        height = 44.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
+		if ([self isKindOfClass:[UINavigationController class]])
+			height = 44.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
     }
-    
+	if (![self isKindOfClass:[UINavigationController class]])
+		height = progressView.frame.origin.y + 2.5;
+		
     //Check if the progress view is in its superview and if we are showing the bar.
     if (progressView.superview == nil && [self isShowingProgressBar]) {
-        [self.navigationBar addSubview:progressView];
+		if ([self isKindOfClass:[UINavigationController class]])
+			[((UINavigationController*)self).navigationBar addSubview:progressView];
+		else
+			[self.view addSubview:progressView];
     }
     
     //Layout
@@ -229,18 +246,23 @@ static char secondaryColorKey;
         if (UIInterfaceOrientationIsLandscape(interfaceOrientation)) {
             //Use the maximum value
             width = MAX(screenSize.width, screenSize.height);
-            if ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPhone) {
-                height = 32.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
-            } else {
-                height = 44.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
-            }
+			if ([self isKindOfClass:[UINavigationController class]]) {
+				if ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPhone) {
+					height = 32.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
+				} else {
+					height = 44.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
+				}
+			}
         } else {
             //Use the minimum value
             width = MIN(screenSize.width, screenSize.height);
-            height = 44.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
+			if ([self isKindOfClass:[UINavigationController class]])
+				height = 44.0; //Hate hardcoding values, but autolayout doesn't work, and cant retreive the new height until after the animation completes.
         }
-        
-        //Create the pattern image
+		if (![self isKindOfClass:[UINavigationController class]])
+			height = [self getProgressView].frame.origin.y;
+			
+		//Create the pattern image
         CGFloat stripeWidth = 2.5;
         //Start the image context
         UIGraphicsBeginImageContextWithOptions(CGSizeMake(stripeWidth * 4.0, stripeWidth * 4.0), NO, [UIScreen mainScreen].scale);
@@ -248,7 +270,10 @@ static char secondaryColorKey;
         if ([self getPrimaryColor]) {
             [[self getPrimaryColor] setFill];
         } else {
-        [self.navigationBar.tintColor setFill];
+			if ([self isKindOfClass:[UINavigationController class]])
+				[((UINavigationController*)self).navigationBar.tintColor setFill];
+			else
+				[self.view.tintColor setFill];
         }
         UIBezierPath *fillPath = [UIBezierPath bezierPathWithRect:CGRectMake(0, 0, stripeWidth * 4.0, stripeWidth * 4.0)];
         [fillPath fill];
@@ -261,10 +286,12 @@ static char secondaryColorKey;
             CGFloat green;
             CGFloat blue;
             CGFloat alpha;
-            [self.navigationBar.barTintColor getRed:&red green:&green blue:&blue alpha:&alpha];
+			if ([self isKindOfClass:[UINavigationController class]])
+				[((UINavigationController*)self).navigationBar.barTintColor getRed:&red green:&green blue:&blue alpha:&alpha];
             //System set the tint color to a close to, but not non-zero value for each component. 
             if (alpha > .05) {
-                [self.navigationBar.barTintColor setFill];
+				if ([self isKindOfClass:[UINavigationController class]])
+					[((UINavigationController*)self).navigationBar.barTintColor setFill];
             } else {
                 [[UIColor whiteColor] setFill];
             }
@@ -322,7 +349,8 @@ static char secondaryColorKey;
 
 - (void)setOldTitle:(NSString *)oldTitle
 {
-    objc_setAssociatedObject(self, &oldTitleKey, self.visibleViewController.navigationItem.title, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	if ([self isKindOfClass:[UINavigationController class]])
+		objc_setAssociatedObject(self, &oldTitleKey, ((UINavigationController*)self).visibleViewController.navigationItem.title, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (NSString *)getOldTitle
@@ -413,6 +441,12 @@ static char secondaryColorKey;
     objc_setAssociatedObject(self, &progressViewKey, view, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
+- (void)setProgressViewOrigin:(CGPoint)origin {
+	UIView* progressView = [self getProgressView];
+	CGRect f = progressView.frame;
+	f.origin = origin;
+	progressView.frame = f;
+}
 - (UIView *)getProgressView
 {
     return objc_getAssociatedObject(self, &progressViewKey);

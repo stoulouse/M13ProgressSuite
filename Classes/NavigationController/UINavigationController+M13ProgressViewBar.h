@@ -14,7 +14,7 @@
 #import <UIKit/UIKit.h>
 
 /**A UINavagationController category that adds a progress view to the UINavigationBar.*/
-@interface UINavigationController (M13ProgressViewBar)
+@interface UIViewController (M13ProgressViewBar)
 
 /**@name Actions*/
 
@@ -48,5 +48,8 @@
  @param secondaryColor The color to set.
  */
 - (void)setSecondaryColor:(UIColor *)secondaryColor;
+
+- (UIView *)getProgressView;
+- (void)setProgressViewOrigin:(CGPoint)origin;
 
 @end
