@@ -428,7 +428,7 @@ static char secondaryColorKey;
 - (CGFloat)getProgress
 {
     NSNumber *number =  objc_getAssociatedObject(self, &progressKey);
-    return number.floatValue;
+	return (isnan(number.floatValue) ? 0 : number.floatValue);
 }
 
 - (CGFloat)getAnimationDuration
